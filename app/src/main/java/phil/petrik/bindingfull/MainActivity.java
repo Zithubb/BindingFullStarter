@@ -18,72 +18,56 @@ import java.io.IOException;
 
 import phil.petrik.bindingfull.data.Film;
 import phil.petrik.bindingfull.data.RequestTask;
+import phil.petrik.bindingfull.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
-    MaterialButton buttonNew;
-    MaterialButton buttonSync;
-    MaterialButton buttonClose;
-    MaterialButton buttonCloseEditor;
-    MaterialButton buttonAlter;
-    MaterialButton buttonSend;
-    ConstraintLayout layoutFilmEditor;
-    ConstraintLayout layoutFilmInspector;
-    TextView textViewFilmCim;
-    TextView textViewFilmKategoria;
-    TextView textViewFilmHossz;
-    TextView textViewFilmErtekeles;
 
+    ActivityMainBinding binding;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        init();
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
         handleListeners();
-        buttonSync.callOnClick();
+        binding.buttonSync.callOnClick();
     }
 
     private void handleListeners() {
-        buttonNew.setOnClickListener(($)->{
-            layoutFilmEditor.setVisibility(View.VISIBLE);
-            layoutFilmInspector.setVisibility(View.GONE);
+        binding.buttonNew.setOnClickListener(($)->{
+            binding.layoutFilmEditor.setVisibility(View.VISIBLE);
+            binding.layoutFilmInspector.setVisibility(View.GONE);
         });
-        buttonSync.setOnClickListener(($) -> {
+        binding.buttonSync.setOnClickListener(($) -> {
             setFilms();
         });
-        buttonClose.setOnClickListener(($) -> {
-            layoutFilmInspector.setVisibility(View.GONE);
+        binding.buttonClose.setOnClickListener(($) -> {
+            binding.layoutFilmInspector.setVisibility(View.GONE);
         });
-        buttonCloseEditor.setOnClickListener(($) -> {
-            layoutFilmEditor.setVisibility(View.GONE);
+        binding.buttonCloseEditor.setOnClickListener(($) -> {
+            binding.layoutFilmEditor.setVisibility(View.GONE);
         });
-        buttonAlter.setOnClickListener(($) -> {
-            layoutFilmEditor.setVisibility(View.VISIBLE);
-            layoutFilmInspector.setVisibility(View.GONE);
+        binding.buttonAlter.setOnClickListener(($) -> {
+            binding.layoutFilmEditor.setVisibility(View.VISIBLE);
+            binding.layoutFilmInspector.setVisibility(View.GONE);
         });
-        buttonSend.setOnClickListener(($) -> {
+        binding.buttonSend.setOnClickListener(($) -> {
             sendFilm(Film.emptyFilm());
         });
     }
 
-    private void init(){
-        buttonNew = findViewById(R.id.button_New);
-        buttonSync = findViewById(R.id.button_Sync);
-        buttonClose = findViewById(R.id.buttonClose);
-        buttonCloseEditor = findViewById(R.id.buttonCloseEditor);
-        buttonAlter = findViewById(R.id.buttonAlter);
-        buttonSend = findViewById(R.id.buttonSend);
-        layoutFilmEditor = findViewById(R.id.layout_Film_Editor);
-        layoutFilmInspector = findViewById(R.id.layout_Film_Inspector);
-        textViewFilmCim = findViewById(R.id.filmCim);
-        textViewFilmKategoria = findViewById(R.id.filmKategoria);
-        textViewFilmHossz = findViewById(R.id.filmHossz);
-        textViewFilmErtekeles = findViewById(R.id.filmErtekeles);
-    }
-
     private void setFilm(int id) {
         try {
-            //TODO
-            throw new IOException();
+            binding.layoutFilmInspector.setVisibility(View.VISIBLE);
+            RequestTask requestTask = new RequestTask("/film/"+id,"GET");
+            requestTask.setLastTask(()->{
+                Gson gson =new Gson();
+                String content = requestTask.getResponse().getContent();
+                Film film = gson.fromJson(content,Film.class);
+                binding.setFilm(film);
+            });
+            requestTask.execute();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -92,8 +76,19 @@ public class MainActivity extends AppCompatActivity {
 
     private void setFilms() {
         try {
-            //TODO
-            throw new IOException();
+            binding.layoutFilmInspector.setVisibility(View.VISIBLE);
+            RequestTask requestTask = new RequestTask("/film/","GET");
+            requestTask.setLastTask(()->{
+                Gson gson =new Gson();
+                String content = requestTask.getResponse().getContent();
+                Film[] filmek = gson.fromJson(content,Film[].class);
+                for (Film film:filmek ) {
+                    binding.layoutFilms.addView(createFilmButton(film));
+
+                }
+
+            });
+            requestTask.execute();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -112,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
             sendFilm(film, "POST");
         });
         alertDialog.setNegativeButton("Nem", (dialogInterface, i) -> {
-            layoutFilmEditor.setVisibility(View.GONE);
+            binding.layoutFilmEditor.setVisibility(View.GONE);
         });
         alertDialog.show();
     }
@@ -127,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (requestTask.getResponse().getCode() < 300) {
                     Toast.makeText(MainActivity.this, "Sikeres " + toastText, Toast.LENGTH_SHORT).show();
-                    layoutFilmEditor.setVisibility(View.GONE);
+                    binding.layoutFilmEditor.setVisibility(View.GONE);
                     return;
                 }
                 Log.d("Hívás / " + requestTask.getResponse().getCode(), requestTask.getResponse().getContent());
